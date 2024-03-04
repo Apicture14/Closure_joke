@@ -1,78 +1,52 @@
-#include "Utils.h"
+#include <unistd.h>
 #include <iostream>
 #include <cstdio>
 #include <string>
-#include <string.h>
+#include <cstring>
 #include <windows.h>
 #include <tlhelp32.h>
 #include <vector>
 #include <algorithm>
 #include <mutex>
-#pragma comment( linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"" )
+using namespace std;
 
-using namespace types;
 typedef PROCESSENTRY32 PE;
 
-vector<string> t = {"哔哩哔哩","PRTS","明日方舟"};
-string flag = "chrome.exe";
-vector<string> classn = {"Chrome_WidgetWin_1","MozillaWindowClass","CefBrowserWindow","Chrome_RenderWidgetHostHWND"};
+vector<string> Targets = {"哔哩哔哩","PRTS","明日方舟"};
+vector<string> ClassNames = {"Chrome_WidgetWin_1","MozillaWindowClass","CefBrowserWindow","Chrome_RenderWidgetHostHWND"};
 
-BOOL CALLBACK EnumProc(HWND h,LPARAM l){
-    if (IsWindowVisible(h)==FALSE||GetParent(h)!=NULL){
+BOOL CALLBACK EnumProc(HWND handle,LPARAM lparam){
+    if (IsWindowVisible(handle)==FALSE||GetParent(handle)!=NULL){
         return TRUE;
     }
-    int s = GetWindowTextLengthA(h)+1;
-    char c[s] = {0};
-    char cl[100] = {0};
-    GetWindowTextA(h,c,s);
-    GetClassNameA(h,cl,100);
-    if (c==""||(std::count(classn.begin(),classn.end(),((string)cl))==0)){
+    int nameLength = GetWindowTextLengthA(handle)+1;
+    char name[nameLength] = {0};
+    char className[100] = {0};
+    GetWindowTextA(handle,name,nameLength);
+    GetClassNameA(handle,className,100);
+    if (name==""||(std::count(ClassNames.begin(),ClassNames.end(),((string)className))==0)){
         return TRUE;
     }else{
-        bool f;
-        string a = c;
-        auto fd = std::count(t.begin(),t.end(),((string)c));
+        auto fd = std::count(Targets.begin(),Targets.end(),((string)name));
         if (fd!=0){
-            MessageBoxA(h,"禁止访问此页面","消息",MB_OK+MB_ICONWARNING);
-            if (FAILED(SendMessageA(h,WM_CLOSE,0,0))){
-            DWORD pid; GetWindowThreadProcessId(h,&pid);
+            MessageBoxA(handle,"禁止访问此页面","消息",MB_OK+MB_ICONWARNING);
+            if (FAILED(SendMessageA(handle,WM_CLOSE,0,0))){
+            DWORD pid; GetWindowThreadProcessId(handle,&pid);
             HANDLE p = OpenProcess(PROCESS_TERMINATE,FALSE,pid);
             TerminateProcess(p,0);
         }
-        
-        
     }
     return TRUE;
 }
 }
 
 int main(int argc,char* argv[]){
+
+    string name;
     HANDLE hMutex;
-    string name = (argv[0]);
-    HWND h = GetConsoleWindow();
-    DWORD xw;
+    HWND hCMD = GetConsoleWindow();
 
-    
-    GetWindowThreadProcessId(h,&xw);
-    ShowWindow(h,SW_HIDE);
-    /*
-
-    HANDLE p = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS,0);
-    PROCESSENTRY32 pi;
-
-    pi.dwSize = sizeof(PROCESSENTRY32);
-
-    if (INVALID_HANDLE_VALUE == p){
-        return -1;
-    }
-
-    bool bRet;
-    bRet = (p,&pi);
-    while (bRet)
-    {
-        bRet = Process32Next(p,&pi);
-    }
-    */
+    ShowWindow(hCMD,SW_HIDE);
 
     TCHAR * MutexName = (TCHAR*)"RunningMutex";
     hMutex = CreateMutex(NULL,FALSE,MutexName);
@@ -82,11 +56,36 @@ int main(int argc,char* argv[]){
         exit(1);
     }
     
-
-    while (true)
-    {
-        EnumWindows(EnumProc,0);
-        _sleep(500);
-    }
+    string Local = ((string)argv[0]);
+    int idx = Local.find_last_of("\\"); 
+    name = Local.substr(idx+1,-1);
     
+    if (argc==1){
+        while (true)
+        {
+            EnumWindows(EnumProc,0);
+            _sleep(500);
+        }
+    }else {
+        if (argc==2){
+            if (access(argv[1],F_OK)!=0){
+                MessageBox(NULL,"incorrect path","Fatal Error",MB_OK+MB_ICONERROR);
+            }
+            try
+            {
+                if (CopyFileA(argv[0],strcat(argv[1],("\\"+name).c_str()),FALSE)==TRUE){
+                    MessageBox(NULL,"Deploy Success","Message",MB_OK+MB_ICONINFORMATION);  
+                    exit(0);
+                }else{
+                    MessageBox(NULL,"Deploy Failed","Message",MB_OK+MB_ICONWARNING);
+                }
+            }
+            catch(const std::exception& e)
+            {
+                MessageBox(NULL,e.what(),"Fatal Error!",MB_ICONERROR+MB_OK);
+            }
+        }else{
+            MessageBox(NULL,"Unknown Usage!","Fatal Error!",MB_OK);
+        }
+    }
 }
