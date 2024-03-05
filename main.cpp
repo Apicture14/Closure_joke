@@ -27,17 +27,20 @@ BOOL CALLBACK EnumProc(HWND handle,LPARAM lparam){
     if (name==""||(std::count(ClassNames.begin(),ClassNames.end(),((string)className))==0)){
         return TRUE;
     }else{
-        auto fd = std::count(Targets.begin(),Targets.end(),((string)name));
-        if (fd!=0){
-            MessageBoxA(handle,"禁止访问此页面","消息",MB_OK+MB_ICONWARNING);
-            if (FAILED(SendMessageA(handle,WM_CLOSE,0,0))){
-            DWORD pid; GetWindowThreadProcessId(handle,&pid);
-            HANDLE p = OpenProcess(PROCESS_TERMINATE,FALSE,pid);
-            TerminateProcess(p,0);
+        for (auto i = Targets.begin(); i != Targets.end(); i++){
+            auto fd = ((string)name).find(*i);
+            if (fd!=string::npos){
+                MessageBoxA(handle,"禁止访问此页面","消息",MB_OK+MB_ICONWARNING);
+                if (FAILED(SendMessageA(handle,WM_CLOSE,0,0))){
+                DWORD pid; GetWindowThreadProcessId(handle,&pid);
+                HANDLE p = OpenProcess(PROCESS_TERMINATE,FALSE,pid);
+                TerminateProcess(p,0);
+                }
+            }
+        
         }
-    }
     return TRUE;
-}
+    }
 }
 
 int main(int argc,char* argv[]){
