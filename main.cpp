@@ -1,91 +1,89 @@
-#include <unistd.h>
-#include <iostream>
-#include <cstdio>
-#include <string>
-#include <cstring>
 #include <windows.h>
 #include <tlhelp32.h>
 #include <vector>
 #include <algorithm>
 #include <mutex>
+#include <iostream>
+#include <cstdio>
+#include <cstring>
+#include <unistd.h>
 using namespace std;
 
 typedef PROCESSENTRY32 PE;
+typedef int (WINAPI *MESSAGEBOXTIMEOUTA)(HWND, LPCSTR, LPCSTR, UINT, WORD, DWORD);
 
-vector<string> Targets = {"ﬂŸ¡®ﬂŸ¡®","PRTS","√˜»’∑Ω÷€"};
+vector<string> Targets = {"Âπ≤ÊùØ","PRTS","ÊòéÊó•"};
 vector<string> ClassNames = {"Chrome_WidgetWin_1","MozillaWindowClass","CefBrowserWindow","Chrome_RenderWidgetHostHWND"};
 
-BOOL CALLBACK EnumProc(HWND handle,LPARAM lparam){
-    if (IsWindowVisible(handle)==FALSE||GetParent(handle)!=NULL){
+HMODULE hUser32 = LoadLibraryA("user32.dll");
+MESSAGEBOXTIMEOUTA MessageBoxTimeoutA = (MESSAGEBOXTIMEOUTA)GetProcAddress(hUser32, "MessageBoxTimeoutA");
+
+BOOL CALLBACK EnumProc(HWND handle, LPARAM lparam) {
+    if (IsWindowVisible(handle) == FALSE || GetParent(handle) != NULL) {
         return TRUE;
     }
-    int nameLength = GetWindowTextLengthA(handle)+1;
+    int nameLength = GetWindowTextLengthA(handle) + 1;
     char name[nameLength] = {0};
     char className[100] = {0};
-    GetWindowTextA(handle,name,nameLength);
-    GetClassNameA(handle,className,100);
-    if (name==""||(std::count(ClassNames.begin(),ClassNames.end(),((string)className))==0)){
+    GetWindowTextA(handle, name, nameLength);
+    GetClassNameA(handle, className, 100);
+    if (string(name) == "" || (std::count(ClassNames.begin(), ClassNames.end(), string(className)) == 0)) {
         return TRUE;
-    }else{
-        auto fd = std::count(Targets.begin(),Targets.end(),((string)name));
-        if (fd!=0){
-            MessageBoxA(handle,"Ω˚÷π∑√Œ ¥À“≥√Ê","œ˚œ¢",MB_OK+MB_ICONWARNING);
-            if (FAILED(SendMessageA(handle,WM_CLOSE,0,0))){
-            DWORD pid; GetWindowThreadProcessId(handle,&pid);
-            HANDLE p = OpenProcess(PROCESS_TERMINATE,FALSE,pid);
-            TerminateProcess(p,0);
+    } else {
+        auto fd = std::count(Targets.begin(), Targets.end(), string(name));
+        if (fd != 0) {
+            MessageBoxTimeoutA(handle, "Á¶ÅÊ≠¢ËÆøÈóÆÊ≠§È°µÈù¢", "Ë≠¶Âëä", MB_OK + MB_ICONWARNING, 0, 3000);
+            DWORD pid; 
+            GetWindowThreadProcessId(handle, &pid);
+            HANDLE p = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
+            TerminateProcess(p, 0);
         }
     }
     return TRUE;
 }
-}
 
-int main(int argc,char* argv[]){
-
+int main(int argc, char* argv[]) {
     string name;
     HANDLE hMutex;
     HWND hCMD = GetConsoleWindow();
 
-    ShowWindow(hCMD,SW_HIDE);
+    ShowWindow(hCMD, SW_HIDE);
 
-    TCHAR * MutexName = (TCHAR*)"RunningMutex";
-    hMutex = CreateMutex(NULL,FALSE,MutexName);
+    TCHAR* MutexName = (TCHAR*)"RunningMutex";
+    hMutex = CreateMutex(NULL, FALSE, MutexName);
 
-    if (GetLastError() == ERROR_ALREADY_EXISTS){
-        MessageBox(NULL,"Program Already Running","Fatal Error!",MB_OK+MB_ICONERROR);
+    if (GetLastError() == ERROR_ALREADY_EXISTS) {
+        MessageBoxTimeoutA(NULL, "Program Already Running", "Fatal Error!", MB_OK + MB_ICONERROR, 0, 3000);
         exit(1);
     }
-    
-    string Local = ((string)argv[0]);
+
+    string Local = string(argv[0]);
     int idx = Local.find_last_of("\\"); 
-    name = Local.substr(idx+1,-1);
-    
-    if (argc==1){
-        while (true)
-        {
-            EnumWindows(EnumProc,0);
+    name = Local.substr(idx + 1);
+
+    if (argc == 1) {
+        while (true) {
+            EnumWindows(EnumProc, 0);
             _sleep(500);
         }
-    }else {
-        if (argc==2){
-            if (access(argv[1],F_OK)!=0){
-                MessageBox(NULL,"incorrect path","Fatal Error",MB_OK+MB_ICONERROR);
-            }
-            try
-            {
-                if (CopyFileA(argv[0],strcat(argv[1],("\\"+name).c_str()),FALSE)==TRUE){
-                    MessageBox(NULL,"Deploy Success","Message",MB_OK+MB_ICONINFORMATION);  
-                    exit(0);
-                }else{
-                    MessageBox(NULL,"Deploy Failed","Message",MB_OK+MB_ICONWARNING);
-                }
-            }
-            catch(const std::exception& e)
-            {
-                MessageBox(NULL,e.what(),"Fatal Error!",MB_ICONERROR+MB_OK);
-            }
-        }else{
-            MessageBox(NULL,"Unknown Usage!","Fatal Error!",MB_OK);
+    } else if (argc == 2) {
+        if (access(argv[1], F_OK) != 0) {
+            MessageBoxTimeoutA(NULL, "Incorrect Path", "Fatal Error", MB_OK + MB_ICONERROR, 0, 3000);
+            exit(1);
         }
+        try {
+            string newPath = string(argv[1]) + "\\" + name;
+            if (CopyFileA(argv[0], newPath.c_str(), FALSE) == TRUE) {
+                MessageBoxTimeoutA(NULL, "Deploy Success", "Message", MB_OK + MB_ICONINFORMATION, 0, 3000);
+                exit(0);
+            } else {
+                MessageBoxTimeoutA(NULL, "Deploy Failed", "Message", MB_OK + MB_ICONWARNING, 0, 3000);
+            }
+        } catch(const std::exception& e) {
+            MessageBoxTimeoutA(NULL, e.what(), "Fatal Error!", MB_ICONERROR + MB_OK, 0, 3000);
+        }
+    } else {
+        MessageBoxTimeoutA(NULL, "Unknown Usage!", "Fatal Error!", MB_OK, 0, 3000);
     }
+    return 0;
 }
