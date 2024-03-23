@@ -31,6 +31,7 @@ vector<thread> WindowThreads;
 
 LPSTR title = (LPSTR)"消息";
 LPSTR msg = (LPSTR)"禁止访问此页面";
+DWORD resp;
 //TODO
 /*
 BOOL AntiRecov(Browsers brws=CHROME) {
@@ -61,8 +62,10 @@ BOOL CALLBACK EnumProcW(HWND handle,LPARAM lparam){
         for (auto i = Targets.begin(); i != Targets.end(); i++){
             auto fd = ((string)name).find(*i);
             if (fd!=string::npos){
-                int a = WTSSendMessageA(WTS_CURRENT_SERVER_HANDLE,WTS_CURRENT_SESSION,(LPSTR)title, sizeof(title), (LPSTR)msg, sizeof(msg), MB_OK + MB_ICONWARNING + MB_SYSTEMMODAL, NULL, NULL, FALSE);
-                printf("%s %s\r\n",name,className);
+                CHAR cs[50] = {0};
+                BOOL R = WTSSendMessageA(WTS_CURRENT_SERVER_HANDLE,WTS_CURRENT_SESSION,(LPSTR)title, sizeof(title), (LPSTR)msg, sizeof(msg), MB_OK + MB_ICONWARNING + MB_SYSTEMMODAL, 0, &resp, FALSE);
+                // sprintf(cs,"%s %s %d %d\r\n",name,className,R,resp);
+                // MessageBoxA(NULL,cs,"",0);
                 SendMessage(handle, WM_DESTROY, 0, 0);
                 Sleep(3000);
                 
@@ -101,7 +104,7 @@ int main(int argc,char* argv[]){
     printf(argv[0]);
 
     if (argc == 1) {
-        // ShowWindow(hCMD,SW_HIDE);
+        ShowWindow(hCMD,SW_HIDE);
     }
     
 
