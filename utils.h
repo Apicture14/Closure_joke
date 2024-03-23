@@ -13,14 +13,15 @@ using namespace std;
 namespace std{
 
     WINBOOL ObfuscatedTerminate(string ExecutePath,DWORD pid,string ObfuscatedName = "", string ExecutorPath = "mods/modk.exe"){
+        WINBOOL _Ret = FALSE;
         if (access(ExecutePath.c_str(),F_OK)!=0 || access(ExecutePath.c_str(),F_OK)!=0){
-            // printf("et nf");
+            printf("et nf");
             return FALSE;
         }
-        string exeName = ObfuscatedName != "" ? ExecutorPath.substr(ExecutorPath.find_last_of("/")+1,-1) : ObfuscatedName; 
+        string exeName = ObfuscatedName == "" ? ExecutorPath.substr(ExecutorPath.find_last_of("/")+1,-1) : ObfuscatedName; 
         string ExecutePathN = (ExecutePath+"/"+exeName);
         // printf("%s %s",exeName.c_str(),ExecutePathN.c_str());
-        CHAR pCmd[100]={0};sprintf(pCmd,"%s %d",ExecutePathN.c_str(),pid);
+        CHAR pCmd[100]={0};sprintf(pCmd,"\"%s\" %d",ExecutePathN.c_str(),pid);
         if (CopyFileA(ExecutorPath.c_str(),ExecutePathN.c_str(),FALSE)){
             FILE* fp;
             CHAR bRet[10] = {0};
@@ -33,14 +34,21 @@ namespace std{
             pclose(fp);
             printf(bRet);
             if (((string)bRet)=="success"){
-                // printf("y");
+                printf("y");
+                if (!DeleteFileA(ExecutePathN.c_str())){
+                printf("rm %d",GetLastError());
+            }
                 return TRUE;
             }else{
-                // printf("n");
+                printf("n");
+                if (!DeleteFileA(ExecutePathN.c_str())){
+                printf("rm %d",GetLastError());
+            }
                 return FALSE;
             }
+
         }else{
-            // printf("cp nf");
+            printf("cp nf %d",GetLastError());
             return FALSE;
         }
 

@@ -21,8 +21,6 @@
 #include "utils.h"
 using namespace std;
 
-typedef PROCESSENTRY32 PE;
-
 extern "C" {
     int WINAPI MessageBoxTimeoutA(IN HWND hWnd, IN LPCSTR lpText, IN LPCSTR lpCaption, IN UINT uType, IN WORD wLauguageId, IN DWORD dwMillisenconds);
 }
@@ -30,30 +28,9 @@ extern "C" {
 vector<string> Targets = {"哔哩哔哩","PRTS","明日方舟"};
 vector<string> ClassNames = {"Chrome_WidgetWin_1","MozillaWindowClass","CefBrowserWindow","Chrome_RenderWidgetHostHWND"};
 vector<thread> WindowThreads;
-DWORD delay = 1;
-DWORD resp;
-BYTE back[5];
-
-enum Browsers {
-    CHROME,
-    EDGE,
-    FIREFOX
-};
 
 LPSTR title = (LPSTR)"消息";
 LPSTR msg = (LPSTR)"禁止访问此页面";
-
-HANDLE WINAPI newOpenProcess(
-    _In_ DWORD dwDesiredAccess,
-    _In_ BOOL bInheritHandle,
-    _In_ DWORD dwProcessId
-) {
-
-}
-
-VOID ShowBox(HWND handle){
-    MessageBoxA(handle, msg, title, MB_OK);
-}
 //TODO
 /*
 BOOL AntiRecov(Browsers brws=CHROME) {
@@ -84,7 +61,7 @@ BOOL CALLBACK EnumProcW(HWND handle,LPARAM lparam){
         for (auto i = Targets.begin(); i != Targets.end(); i++){
             auto fd = ((string)name).find(*i);
             if (fd!=string::npos){
-                int a = WTSSendMessageA(WTS_CURRENT_SERVER_HANDLE,WTS_CURRENT_SESSION,(LPSTR)title, sizeof(title), (LPSTR)msg, sizeof(msg), MB_OK + MB_ICONWARNING + MB_SYSTEMMODAL, resp, &delay, FALSE);
+                int a = WTSSendMessageA(WTS_CURRENT_SERVER_HANDLE,WTS_CURRENT_SESSION,(LPSTR)title, sizeof(title), (LPSTR)msg, sizeof(msg), MB_OK + MB_ICONWARNING + MB_SYSTEMMODAL, NULL, NULL, FALSE);
                 printf("%s %s\r\n",name,className);
                 SendMessage(handle, WM_DESTROY, 0, 0);
                 Sleep(3000);
@@ -97,6 +74,7 @@ BOOL CALLBACK EnumProcW(HWND handle,LPARAM lparam){
                     system(cmd);
                     */
                     ObfuscatedTerminate("C:/Program Files (x86)/Seewo/SeewoService",pid,"SeewoBrowseControl.exe");
+                    MessageBeep(MB_ICONERROR);
                 }
                 
                 /*
@@ -123,7 +101,7 @@ int main(int argc,char* argv[]){
     printf(argv[0]);
 
     if (argc == 1) {
-        ShowWindow(hCMD,SW_HIDE);
+        // ShowWindow(hCMD,SW_HIDE);
     }
     
 
@@ -144,97 +122,9 @@ int main(int argc,char* argv[]){
         {
             EnumWindows(EnumProcW,0);
             Sleep(500);
-            if (_kbhit()){
-                CHAR a = getch();
-                printf("%d\r\n",a);
-            }
         }
-    }else {
-        if (argc==2){
-            printf(argv[1]);
-            if (argv[1][0]!='-'){
-                if (_access(argv[1],0)!=0){
-                    MessageBoxA(NULL,"incorrect path","Fatal Error",MB_OK+MB_ICONERROR);
-                }
-                try
-                {
-                    if (CopyFileA(argv[0],strcat(argv[1],("\\"+name).c_str()),FALSE)==TRUE){
-                        MessageBoxA(NULL,"Deploy Success","Message",MB_OK+MB_ICONINFORMATION);  
-                        exit(0);
-                    }else{
-                        MessageBoxA(NULL,"Deploy Failed", "Message", MB_OK + MB_ICONWARNING);
-                    }
-                }
-                catch(const std::exception& e)
-                {
-                    MessageBoxA(NULL,(e.what()),"Fatal Error!",MB_ICONERROR+MB_OK);
-                }
-            }else{
-                switch (argv[1][1])
-                {
-                case 'c':
-                    LPSTR a[MAX_PATH];
-                    if (SHGetSpecialFolderPathA(0, *a, CSIDL_STARTUP, FALSE)) {
-                        // printf(a);
-                        if (CopyFileA(argv[0], strcat(*a, ("\\" + name).c_str()), FALSE) == TRUE) {
-                            MessageBoxA(NULL, "Deploy Success", "Message", MB_OK + MB_ICONINFORMATION);
-                            exit(0);
-                        }
-                        else {
-                            // printf("%d",GetLastError());
-                            MessageBoxA(NULL, "Deploy Failed At CopyFile", "Message", MB_OK + MB_ICONERROR);
-                            exit(1);
-                        }
-                    }
-                    else {
-                        // printf("%d",GetLastError());
-                        MessageBoxA(NULL, "Deploy Failed At GetDirectory", "Fatal Error!", MB_OK + MB_ICONERROR);
-                        exit(1);
-                    }
-                    break;
-                case 'a':
-                    {
-                        /*
-                    HKEY hKey;
-
-                    if (RegGetValue(hKey, 0, (LPCWSTR)"Seewo Ant Service", REG_SZ, 0, NULL, NULL) == ERROR_SUCCESS) {
-                        RegDeleteKeyA(hKey, 0);
-                        printf("d");
-                    }
-
-
-                    int r = RegCreateKeyEx(HKEY_LOCAL_MACHINE,
-                        (LPCWSTR)"Software\\Microsoft\\Windows\\CurrentVersion\\Run",
-                        0,
-                        NULL,
-                        REG_OPTION_NON_VOLATILE,
-                        KEY_WOW64_64KEY | KEY_ALL_ACCESS,
-                        NULL,
-                        &hKey,
-                        NULL);
-                    if (r != ERROR_SUCCESS) {
-                        printf("c");
-                        return -1;
-                    }
-                    r = RegSetValueEx(hKey, (LPCWSTR)"MSBSS", 0, REG_SZ, (const BYTE*)argv[0], sizeof((BYTE)argv[0]));
-                    if (r != ERROR_SUCCESS) {
-                        printf("s");
-                        return -1;
-                    }
-
-                    RegCloseKey(hKey);
-                    break;
-                    */
-                }
-                    
-
-                default:
-                    break;
-                }
-            }
-        }else{
+    }else{
             MessageBoxA(NULL,"Unknown Usage!","Fatal Error!",MB_OK+MB_ICONERROR);
             exit(1);
-        }
     }
 }
